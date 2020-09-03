@@ -72,6 +72,11 @@ def get_the_output(num, df, close_index):
 	gene_name = df.iloc[close_index][8][gene_name_start:gene_name_end]
 	print("The gene name is " + gene_name)
 
+	gene_id_start = df.iloc[close_index][8].find("gene_id \"") + 9
+	gene_id_end = df.iloc[close_index][8].find("\"", gene_id_start)
+	gene_id = df.iloc[close_index][8][gene_id_start:gene_id_end]
+	print("The gene id is " + gene_id)
+
 	biotype_start = df.iloc[close_index][8].find("gene_biotype \"") + 14
 	biotype_end = df.iloc[close_index][8].find("\"", biotype_start)
 	biotype = df.iloc[close_index][8][biotype_start:biotype_end]
@@ -96,6 +101,7 @@ get_the_output(21378950, read_gtf_df("/Users/cmdb/qbb2020-answers/day4-lunch/", 
 #------------------------------------------------------------------------------------------------------
 #This thing iterated 17 times before finding the answer
 #The gene name is tin
+#The gene id is FBgn0004110
 #The biotype is protein_coding
 #Shortest distance from the beginning of gene is 27 bp
 #------------------------------------------------------------------------------------------------------
