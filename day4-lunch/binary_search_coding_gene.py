@@ -1,7 +1,8 @@
 import os, sys
 import pandas as pd
 
-#Run this python script by changing the file path for file BDGP6.Ensembl.81.gtf in the last two lines
+#Run this python script by changing the file path for file BDGP6.Ensembl.81.gtf (not the file name, the actual path)
+#in the last two lines
 #This code is ugly so I'll add the output to the end of the file as a comment so you know it actually
 #works
 
@@ -71,6 +72,11 @@ def get_the_output(num, df, close_index):
 	gene_name = df.iloc[close_index][8][gene_name_start:gene_name_end]
 	print("The gene name is " + gene_name)
 
+	gene_id_start = df.iloc[close_index][8].find("gene_id \"") + 9
+	gene_id_end = df.iloc[close_index][8].find("\"", gene_id_start)
+	gene_id = df.iloc[close_index][8][gene_id_start:gene_id_end]
+	print("The gene id is " + gene_id)
+
 	begin = df.iloc[close_index][3]
 	end = df.iloc[close_index][4]
 
@@ -90,6 +96,7 @@ get_the_output(21378950, read_gtf_df("/Users/cmdb/qbb2020-answers/day4-lunch/", 
 #------------------------------------------------------------------------------------------------------
 #This thing iterated 17 times before finding the answer
 #The gene name is tin
+#The gene id is FBgn0004110
 #Shortest distance from the beginning of gene is 27 bp
 #------------------------------------------------------------------------------------------------------
 
