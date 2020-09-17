@@ -1,0 +1,90 @@
+1. Coverage analysis
+1a. >> samtools faidx ref.fa
+This generated an output file ref.fa.fai which indicated that the length of the reference genome is 233806 bp
+1b. >> for f in *.fq
+>> do
+>> fastqc -o /Users/cmdb/Desktop/quant_assignment_1/asm/fastqc_out -f fastq $f
+>> done
+
+frag180.1.fq
+sequence length: 100 bp
+total sequences: 35178
+
+frag180.2.fq
+sequence length: 100 bp
+total sequences: 35178
+
+jump2k.1.fq
+sequence length: 50
+total sequences: 70355
+
+jump2k.2.fq
+sequence length: 50
+total sequences: 70355
+
+1c. coverage = (number of reads * length of reads * paired)/length of reference
+coverage = ((35178 * 100 * 2) + (70355 * 50 * 2))/233806 = around 60x coverage
+
+1d. See screenshots folder
+
+2. Kmer analysis
+2a. >> cat *.fq > all_fastq.fq
+>> jellyfish count -m 21 -s 100M  -C /Users/cmdb/Desktop/quant_assignment_1/asm/all_fastq.fq
+>> jellyfish histo mer_counts.jf > mer_counts.histo
+Number of kmers that occur 50 times: 1091
+2b. >> jellyfish dump -c mer_counts.jf | sort -n -k 2 | tail -n 10
+GCATCGCCCACATGTGGGCGA 82
+AGCATCGCCCACATGTGGGCG 83
+AGGCCAGCTTATAAGCTGGCC 95
+ACAGGCCAGCTTATAAGCTGG 97
+AACAGGCCAGCTTATAAGCTG 98
+CAGGCCAGCTTATAAGCTGGC 98
+ACGGCGCCCACTAATTAGTGG 101
+CCCACTAATTAGTGGGCGCCG 104
+CGCCCACTAATTAGTGGGCGC 104
+GCCCACTAATTAGTGGGCGCC 105
+2c. The minimum genome haploid length was: 233,468 bp, the maximum genome haploid length was: 233,805 bp
+2d. The actual reference genome length was 233806 bp which is one nucleotide away from the  estimated max value from GenomeScope so I would say the genome size estimate interval was a little left skewed from the actual value but almost captured the actual length.
+
+De novo assembly
+>> cat *.1.fq > forward.fq
+>> cat *.2.fq > reverse.fq
+>> /Users/cmdb/Desktop/quant_assignment_1/asm/SPAdes-3.14.1-Darwin/bin/spades.py -1 forward.fq -2 reverse.fq -o spades_run_1
+3a. >> grep -c ">" contigs.fasta
+4 contigs
+3b. >> samtools faidx contigs.fasta
+>> awk '{sum+=$2} END {print sum}' contigs.fasta.fai
+total contig length = 234504
+3c. >> cut -f2 contigs.fasta.fai | sort -n | tail -n 1
+longest contig = 105847
+3d. >> ./find_N50.py
+N50 = 153710
+
+Whole Genome Alignment
+4a. >> dnadiff ref.fa contigs.fasta
+Average identity 1-to-1: 100.00
+4b. >> nucmer ref.fa contigs.fasta
+>> show-coords out.delta
+longest alignemnt: 105847
+4c. 4 insertion in REF --> 4 deletions from query
+1 insertion in QER --> 1 insertion in query
+
+Decoding the insertion
+5a. insertions is in NODE_3_length_41352_cov_13.353076 between position 13853 and 14566
+5b. length = 14566 - 13853 = 713 - 1 = 712
+5c. >> samtools faidx contigs.fasta NODE_3_length_41352_cov_13.353076:13853-14566 > insertion.fasta
+>NODE_3_length_41352_cov_13.353076:13854-14565
+TAACGATTTACATCGGGAAAGCTTAATGCAATTCACGCAGATATTCAGCTTAGAAGGTAC
+GCAGCGGTGACGGGGTGCGGTCCATAATCTATGAAGCTATGAATTCGTACCTCAAGTAAT
+GTTTTCTTCGCTGCAGTTCAGAAGTGATAAAGGTATCCCGCTTAGCCTGGCATACTTTGT
+GCGTTCGTACCGCCCAGCATTAATGACTTGTGTAGGCAAGTAATGAACGACTCTTCTACG
+CCGCGCCTAACCTCCGCACATAATGGCAGCATGTGGTAGTTACATACGCACAGAAGTGGT
+TCGGTTTTAACTATAGTCAGATATGAATAAGCTGCGTGTGTCGTTGTGTCGGCGTGTCGT
+ACTTACCTCCTGACATAGGTGAATTTCAGCCTACTGTAAGTTTGGAGTCGCGCTCTTTTC
+TTATTATATTCTTTGGTATGTGTGTGATGGGTTCGGGCGTGTATTGATGTCTCTAAGGCT
+CATGTTAGTGTTTATTTGGTCAGTTATGACGGTGTTCCTGTCGTACGTGTTGGCTTAGCG
+GACTTGTAGACGGGATCAAGGTTGTCTGACCCTCCGGTCGACCGTGGGTCGGCCGTCCCG
+GCCAGAATACAAGCCGCTTAGACTTTCGAAAGAGGGTAAGTTACTACGCGCGAACGTTAT
+ACCTCGTTTCAGTATGCACTCCCTTAAGTCACTCAGAAAAGACTAAGGGGCT
+5d. The decoded message :  Congratulations to the 2020 CMDB @ JHU class!  Keep on looking for little green aliens...
+
