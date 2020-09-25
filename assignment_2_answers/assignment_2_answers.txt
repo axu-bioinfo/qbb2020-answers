@@ -1,0 +1,53 @@
+Initial steps:
+>> conda activate lab-week2
+>> conda deactivate
+>> wget "http://67.207.142.119/outgoing/BYxRM_subset.tar.xv"
+>> tar -xvzf BYxRM_subset.tar.xv
+>> wget "http://hgdownload.soe.ucsc.edu/goldenPath/sacCer3/bigZips/chromFa.tar.gz"
+>> tar -xvzf chromFa.tar.gz
+>> cat chr*.fa > sacCer3.fa
+>> rm chr*.fa
+
+Step1: Index the sacCer3 genome with bwa index
+>> bwa index sacCer3.fa
+
+Step 2: Alignment with bwa mem
+>> mkdir bwa_mem_output
+>> for f in *.fastq
+>> do
+>> bwa mem -R "@RG\tID:$f\tSM:$f" sacCer3.fa $f > bwa_mem_output/$f.sam
+>> done
+
+Step 3: Create a sorted bam file with samtools, for input to variant callers
+>> mkdir sorted_bam_output
+>> cd bwa_mem_output
+>> for f in *.sam
+>> do
+>> samtools view -S -b $f > ${f%.sam}.bam
+>> done
+
+>> samtools merge ../bam_sorted_output/all_A01_merged.bam *.bam
+>> cd ../bam_sorted_output
+>> samtools sort -o all_A01_merged_sorted.bam all_A01_merged.bam
+
+Step 4: Variant calling with freebays
+>> freebayes -f sacCer3.fa --genotype-qualities bam_sorted_output/all_A01_merged_sorted.bam > freebayes_output/A01_sacCer3_variants.vcf
+
+Step 5: Filter variants based on genotype quality using vcffilter
+>> vcffilter -f "QUAL > 20" A01_sacCer3_variants.vcf > 99_A01_sacCer3_variants.vcf
+
+Step 6: Decompose complex haplotypes using vcfallelicprimitives
+>> vcfallelicprimitives -k -g 99_A01_sacCer3_variants.vcf > decompose_A01_sacCer3_variants.vcf
+
+Step 7: Variant effect prediction with snpeff ann
+>> snpeff download R64-1-1.86
+>> snpeff ann R64-1-1.86 decompose_A01_sacCer3_variants.vcf > annotated_func_A01_sacCer3_variants.vcf
+
+Step 8: Exploratory data analysis through plotting
+(sorry the sublime output for subplots has been historically horrible)
+Read depth distribution: DP=
+Quality distribution of variant genotypes: QA=
+Allele frequency of identified variants: AF=
+Summary of the predicted effects calculated by snpeff:LOF=
+(script: plot_vcf.py)
+
