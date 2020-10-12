@@ -1,0 +1,17 @@
+HW 4 answers
+
+1. Ran blastn on NCBI website. Changes parameters "Max target sequences" to 1000 and "Expect threshold" to 0.00001
+Downloaded seqdump.txt from NCBI and add query sequence
+>> cat week4_query.fa seqdump.fasta > final_seq.fasta
+2. 
+#Translate to aa sequence
+>>transeq -sequence final_seq.fasta -outseq out_seq.fasta
+
+#Align with MAFFT
+>>mafft --auto out_seq.fasta > mafft_align_out.fasta
+
+3. Run week4_answer3.py (if you want to run it yourself just change the file and path names in the python sccript), this script should output a nucleotide mafft file [mafft_nuc_aligned.fasta] in the directory you run it in.
+
+4. Run week4_answer4.py to get the dS/dN tab delimited dataframe "ds_dn.txt", you can run week4_answer4.py after changing all the names of the needed files
+
+plots are in hw_graphs.ipynb
