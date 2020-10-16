@@ -1,0 +1,55 @@
+Assignment 5: ChIP-seq and motif finding
+
+Part 1: ChIP-seq
+
+1. Map the reads using bowtie2:
+>> bowtie2-build -f /Users/cmdb/Desktop/week_5_hw/chr19.fa /Users/cmdb/Desktop/week_5_hw/bowtie_index/chr19
+>> for f in *.fastq
+do
+(bowtie2 -x /Users/cmdb/Desktop/week_5_hw/bowtie_index/chr19 -U /Users/cmdb/Desktop/week_5_hw/$f -S /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/$f.sam) 2>$f.log
+done
+>> mv *.log bowtie_align_out
+>> cd bowtie_align_out
+>> for f in *.sam
+do
+samtools view -b -S $f > ${f%.sam}.bam
+done
+2. Run macs2 to call peaks
+>> macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/CTCF_ER4.fastq.bam -c /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/input_ER4.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n ER4
+
+>>macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/CTCF_G1E.fastq.bam -c /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/input_G1E.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n G1E
+
+3. Write all locations where CTCF binding is lost/gained during differentiation to a BED file
+>> macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/CTCF_G1E.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n CTCF_G1E
+>> macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/input_G1E.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n input_G1E
+>> macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/CTCF_ER4.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n CTCF_ER4
+>> macs2 callpeak -t /Users/cmdb/Desktop/week_5_hw/bowtie_align_out/input_ER4.fastq.bam --outdir /Users/cmdb/Desktop/week_5_hw/macs2_out -n input_ER4
+
+#gain of CTCF binding sites
+>> bedtools subtract -a CTCF_ER4_peaks.narrowPeak -b input_ER4_peaks.narrowPeak >> gained.bed
+>> bedtools subtract -a CTCF_G1E_peaks.narrowPeak -b input_G1E_peaks.narrowPeak >> gained.bed
+
+#loss of CTCF binding sites
+>> bedtools subtract -a input_ER4_peaks.narrowPeak -b CTCF_ER4_peaks.narrowPeak >> lost.bed
+>> bedtools subtract -a input_G1E_peaks.narrowPeak -b CTCF_G1E_peaks.narrowPeak >> lost.bed
+
+4. Count how many CTCF binding sites overlap and plot it, also plot the number of sites lost and gained during differentiation for each cell type (see hw_5_part1_graph.ipynb)
+>> bedtools intersect -a Mus_musculus.GRCm38.94_features.bed -b ER4_peaks.narrowPeak > ER4_peak_overlap.bed
+>> bedtools intersect -a Mus_musculus.GRCm38.94_features.bed -b G1E_peaks.narrowPeak > G1E_peak_overlap.bed
+
+ER4 counts for intron = 349 exon = 144 promoter = 72
+G1E counts for intron = 301 exon = 117 promoter = 51
+
+Part 2: Motif discovery
+Strongest 100 peaks from ER4
+>> sort -k7 -n /Users/cmdb/Desktop/week_5_hw/macs2_out/ER4_peaks.narrowPeak | tail -n 100 > 100_ER4_peaks.narrowPeak
+>> cd /Users/cmdb/Desktop/week_5_hw/motif_databases
+>> bedtools getfasta -fi /Users/cmdb/Desktop/week_5_hw/chr19.fa -bed /Users/cmdb/Desktop/week_5_hw/macs2_out/100_ER4_peaks.narrowPeak > 100_CTCF_ER4_peaks.fa
+>> meme-chip 100_CTCF_ER4_peaks.fa
+Scan motifs using tomtom
+>> cd /Users/cmdb/Desktop/week_5_hw/motif_out/tomtom_out
+>> tomtom /Users/cmdb/Desktop/week_5_hw/motif_databases/JASPAR/JASPAR_CORE_2016.meme /Users/cmdb/Desktop/week_5_hw/motif_out/memechip_out/combined.meme
+Use meme to create a sequence logo
+>> cd /Users/cmdb/Desktop/week_5_hw/motif_out
+>> meme 100_CTCF_ER4_peaks.fa
+>> epstopdf logo1.eps logo1.pdf
