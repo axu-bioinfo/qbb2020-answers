@@ -1,0 +1,33 @@
+HW 6 commands and notes
+
+1. Getting data
+SRR3083926_1.chr6.fastq -> STEM-seq E4.0ICM rep1 forward
+SRR3083926_2.chr6.fastq -> STEM-seq E4.0ICM rep1 reverse
+SRR3083929_1.chr6.fastq -> STEM-seq E5.5Epi rep1 forward
+SRR3083929_2.chr6.fastq -> STEM-seq E5.5Epi rep1 reverse
+
+>> fastqc -o /Users/cmdb/Desktop/week_6_hw/methylation_fastq/fastqc_out SRR3083929_1.chr6.fastq
+
+*per base sequence content is screwed up so the forward reads have high amount of T and low amount of C and the reverse reads have a high amount of A and low amount of G. Also the per sequence GC content looks weird. All of which looks reasonable for a bisulfite experiment.
+
+Create an index using bismark
+>> bismark_genome_preparation /Users/cmdb/Desktop/week_6_hw/methylation_fastq/chr6_index
+
+Map the two experiments to the genome using bismark
+>> bismark --fastq --output_dir /Users/cmdb/Desktop/week_6_hw/methylation_fastq/bismark_mapping_out /Users/cmdb/Desktop/week_6_hw/methylation_fastq/chr6_index -1 SRR3083926_1.chr6.fastq,SRR3083929_1.chr6.fastq -2 SRR3083926_2.chr6.fastq,SRR3083929_2.chr6.fastq
+
+Use samtools to sort the bam files before visualizing in IGV
+>> cd /Users/cmdb/Desktop/week_6_hw/methylation_fastq/bismark_mapping_out
+>> samtools sort -o SRR3083929_1.chr6_bismark_bt2_pe.sorted.bam SRR3083929_1.chr6_bismark_bt2_pe.bam 
+>> samtools index SRR3083929_1.chr6_bismark_bt2_pe.sorted.bam
+
+Extract the methylation data
+>> cd /Users/cmdb/Desktop/week_6_hw/methylation_fastq/bismark_mapping_out
+>> for f in *.sorted.bam
+>> do
+>> bismark_methylation_extractor --bedgraph --comprehensive --output /Users/cmdb/Desktop/week_6_hw/methylation_fastq/bismark_mapping_out/extract_methylation $f
+>> done
+
+Fold change:
+Ran mean_methylation.py to write out fold_change_e4_to_e5_5.txt
+
