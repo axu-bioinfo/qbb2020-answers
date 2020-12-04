@@ -1,0 +1,13 @@
+>> conda activate hifive
+
+1. fends command 
+>> hifive fends -L genome/mm9.len --binned 100000 genome/gen_partition.h5
+
+2. Create data file containing counts of interaction reads for each partitioned pair
+>> hifive hic-data -X data/WT_100kb/raw_\*.mat genome/gen_partition.h5 genome/count_interact_read.h5
+
+3. Project file that tracks filtering and normalization information
+>> hifive hic-project -f 25 -j 100000 -n 25 genome/count_interact_read.h5 genome/filter_normal.h5
+
+4. Normalize the data to remove bias from PCR, GC content, mappability and fragment length
+>> hifive hic-normalize express -f 25 -w cis genome/filter_normal.h5
