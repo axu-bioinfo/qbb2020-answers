@@ -1,0 +1,83 @@
+Command section:
+
+1. Visualize the KRAKEN classifications of the reads
+>> cd /Users/cmdb/qbb2020-answers/week10_hw/week13_data/KRAKEN
+>> for f in mod_*
+>> do
+>> ktImportText -q ${f} -o /Users/cmdb/Desktop/week10_test_html/${f}.html
+>> done
+
+#you have to make changes to the *.kraken files in order for ktImportTaxonomy to work
+#change it so that ktImportText can use it
+>> python3 part1_kraken_reformat.py
+
+2. Group contigs together
+#align the reads to the assembly
+>> cd /Users/cmdb/qbb2020-answers/week10_hw/week13_data/READS
+>> bwa index ../assembly.fasta
+>> for f in SRR492183 SRR492186 SRR492188 SRR492189 SRR492190 SRR492193 SRR492194 SRR492197
+>> do
+>> bwa mem ../assembly.fasta ${f}_1.fastq ${f}_2.fastq > ${f}.sam
+>> samtools view -bS ${f}.sam > ${f}.bam
+>> samtools sort ${f}.bam -o ${f}.sorted.bam
+>> done
+#run metabat
+>> gzip -k assembly.fasta
+>> cd /Users/cmdb/qbb2020-answers/week10_hw/week13_data/READS
+#Run the easy way
+>> runMetaBat.sh ../assembly.fasta *.sorted.bam
+#Run the more annoying way
+>> jgi_summarize_bam_contig_depths --outputDepth depth.txt *.sorted.bam
+>> metabat2 -i ../assembly.fasta -a depth.txt -o bins
+
+3. Cross reference the scaffolds in each bin with KRAKEN taxonomies
+#get a list of all contig values for each bin
+>> cd /Users/cmdb/qbb2020-answers/week10_hw/bins
+>> for f in bin.*
+>> do
+>> grep ">" ${f} > ${f}.node.name
+>> done
+#run it to get the KRAKEN taxons for each of the 8 bins
+>> python3 identify_bins.py
+#visualize the bin taxonomy
+>> for f in *.name.kraken
+>> do
+>> ktImportText -q ${f} -o /Users/cmdb/Desktop/week10_test_html/bin_html/${f}.html
+>> done
+
+
+Answers section:
+1. It looks like the gut bacteria contains mostly lactobacillus, stapholococcus, and actinobacteria along with various other bacteria growing in the gut. Lactobacillus is easily the heaviest populator of the gut across the first week. However, it looks like the populations of the above mentioned bacterial colonies vary drastically from day to day without a consistent trend. This might be caused by host factors, such as diet, or medication use.
+
+2. Contigs can be grouped together by how much coverage a contig got from the sequenced reads samples. Hypothetically, the contigs that come from the same bacterial population should have the same coverage of the reads. We can also try to use the tetranucleotide frequency of each contig to group them together, although I still don't understand the math behind it.
+
+3.
+a) After running metabat, I got 6 bins. This is a contrast to the 8 bins provided by the course instructor. I think that this difference might have been due to a difference in software version usage, which can change binning results.
+b) According to the metabat2 output, 6 bins (13187322 bases in total) was formed. The total assembly length was around 38071686, so the percentage the bins represent should be roughly around 35% the assembly.
+c) Given that the estimated length of a lactobacillus is 1.9 Mb and stapholococcus is 2.8 Mb, the combined lengths of the contigs in each bin (below) is around those sizes, so it seems reasonable.
+bin1: 2122579
+bin2: 1781136
+bin3: 2498405
+bin4: 2862852
+bin5: 2476955
+bin6: 2222805
+bin7: 2712304
+bin8: 1656034
+d) You can measure completeness by running the bins through a predictive software package that will identify putative bacterial genes. You can then compare the predicted genes to a library containing known single copy housekeeping genes for bacteria to get a good idea of how complete the bin is. Contamination can be examined by calculating the GC content of the contigs in the bin. If it is different, it can be due to contamination or possibly due to a genetic island.
+#find the length of file >> grep -v ">" file | wc | awk '{print $3-$1}'
+
+4.
+a)(Using the 8 bins provided by the course because it will be used later)
+bin1: Staphylococcus haemolyticus JCSC1435
+bin2: Leuconostoc citreum KM20
+bin3: Staphylococcus lugdunensis
+bin4: Enterococcus faecalis
+bin5: Cutibacterium avidum 44067
+bin6: Staphylococcus epidermidis
+bin7: Staphylococcus aureus subsp. aureus
+bin8: Peptoniphilaceae
+b) The taxonomy of a metagenomic bin can be inferred by finding things such as the 16S or ribosomal protein sequences and running them through a phylogenetic tree to see if there is a consensus of where the proteins are within a certain taxa, which suggests the bin taxonomy.
+
+5. The taxonomy results of the heatmap is more specific than what I could decipher from glancing at the visualisation of the KRAKEN classifications of the reads. The highest abundance found in the heatmap is Enterococcus faecalis which is a lactobacillus, which was found to be the most abundant in the KRAKEN 8 sample visualisations. Peptoniphilaceae did not look as abundant in the KRAKEN visualisation compared to the heatmap results. This could be because the heatmap is only looking at the contigs that have been binned, so some read taxonomy information would have been lost.
+
+
